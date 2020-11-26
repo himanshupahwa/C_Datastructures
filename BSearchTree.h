@@ -13,6 +13,8 @@ typedef struct BinarySearchTreeNode
 	
 } BSTNODE;
 
+typedef BSTNODE * BSTNODEPTR;
+
 typedef struct BinarySearchTree
 {
 	BSTNODE *root;
@@ -20,15 +22,19 @@ typedef struct BinarySearchTree
 	BOOL (*fnCompareBSTNodeData)(void *bstNode1, void *bstNode2);
 }BSTREE;
 
-void init_bsnode(BSTNODE* bstNode);
-void init_bsnode(BSTNODE* bstNode,void* data,int mem_size, BOOL (*fnCompareBSTNodeData)(void *bstNode1, void *bstNode2));
+typedef BSTREE * BSTREEPTR;
 
-void init_bstree(BSTREE* bstree);
-void insert_bst(BSTREE* root, int key, int value);
-void inorder_traversal(BSTNODE* root);
-void preorder_traversal(BSTNODE* root);
-void postorder_traversal(BSTNODE* root);
-void dfs(BSTREE* root);
+//void init_bsnode(BSTNODE* bstNode);
+void init_bsnode(BSTNODE* bstNode,void* data,int mem_size);
+
+//void init_bstree(BSTREE* bstree);
+void init_bstree(BSTREEPTR bstree, int mem_size, BOOL (*fnCompareBSTNodeDataPtr)(void *bstNode1, void *bstNode2));
+
+void insert_bst(BSTREEPTR root, void* key);
+void inorder_traversal(BSTNODEPTR root);
+void preorder_traversal(BSTNODEPTR root);
+void postorder_traversal(BSTNODEPTR root);
+void dfs(BSTNODEPTR root);
 void bfs(QUEUE* depthNodes);
 
 #endif
