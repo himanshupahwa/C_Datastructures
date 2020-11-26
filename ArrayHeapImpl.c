@@ -1,117 +1,117 @@
-#include "ArrayHeap.h"
-#include "Queue.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
+#include "HeapArrayImpl.h"
+#include "Queue.h"
 
-void init_heapnode(HEAPNODE* heapNode,void* data,int mem_size)
+void init_heapnode(HEAPARRAYNODEPTR heapArrayData, void * data, int mem_size)
 {
-	heapNode->data	= malloc(mem_size);
-	memcpy(heapNode->data, data, mem_size);
+	heapArrayData->key = malloc(mem_size);
+	memcpy(heapArrayData->key, data, mem_size);
 }
 
-void init_heap(ARRAYHEAPIMPL* heapInst, int heapSize, int memSize, BOOL (*fnCompareHeapNodeDataPtr)(void *heapNode1, void *heapNode2))
+void init_heap(HEAPPTR heap, int max_size, int mem_size, BOOL (*fnCompareHeapNodeData)(void *heapNode1, void *heapNode2))
 {
-	heapInst->max_size = heapSize;
-	heapInst->mem_size = memSize;
-	heapInst->heapArray = (HEAPNODE *) malloc(sizeof(HEAPNODE)*heapSize);
-	heapInst->current_size = -1;
-	heapInst->fnCompareHeapNodeData = fnCompareHeapNodeDataPtr; 
+	heap->currentSize = 0;
+	heap->maxSize = max_size;
+	heap->heapArray = (HEAPARRAYNODEPTR *)malloc(max_size * (sizeof(HEAPARRAYNODE)));
+	heap->mem_size = mem_size;
+	heap->fnCompareHeapNodeData = fnCompareHeapNodeData;
 }
 
-BOOL isEmpty(ARRAYHEAPIMPL* heapInst)
-{
-	return ( heapInst->current_size == 0 ? TRUE : FALSE);
-}
-
-BOOL insert_heap(ARRAYHEAPIMPL* heapInst, int key, int value)
-{
-	if(heapInst->current_size == heapInst->max_size)
-		return FALSE;
-
-
-	init_heapnode(&(heapInst->heapArray[heapInst->current_size+1]), &value, heapInst->mem_size);
-
-	// Trickle up the node inserted to top of heap
-	trickleUp(heapInst, heapInst->current_size+1);
-	heapInst->current_size++; // increment post trickleUp
-
-	return TRUE;
-}
-
-void trickleUp(ARRAYHEAPIMPL* heapInst, int idx) // index of node that needs to be tricked up
+void trickleUp(HEAPPTR heap, int idx)
 {
 	int parentIdx = (idx-1)/2;
-	HEAPNODE nodeToInsert = heapInst->heapArray[idx];
 
-	// loop as long as we havet reacged the root abd idx parent is less than new node
-	while(idx > 0 && heapInst->fnCompareHeapNodeData(heapInst->heapArray[parentIdx].data , nodeToInsert.data) == FALSE) // This logic is for min heap
+	HEAPARRAYNODEPTR currentNode = heap->heapArray[idx];
+	HEAPARRAYNODEPTR parentNode = heap->heapArray[parentIdx];
+
+	while( idx > 0 && heap->fnCompareHeapNodeData(currentNode->key , parentNode->key)) // min or max heap 
 	{
-		heapInst->heapArray[idx] = heapInst->heapArray[parentIdx];
+		heap->heapArray[idx] = heap->heapArray[parentIdx];
 		idx = parentIdx;
-		parentIdx = (parentIdx - 1)/2;
+		parentIdx = (idx-1)/2;
 	}
 
-	heapInst->heapArray[idx] = nodeToInsert;
+	heap->heapArray[idx] = currentNode;
 }
 
-void remove_heap(ARRAYHEAPIMPL* heapInst)
-{
-	HEAPNODE node = heapInst->heapArray[0];
-	heapInst->current_size--;
-	heapInst->heapArray[0] = heapInst->heapArray[heapInst->current_size];
-
-	trickleDown(heapInst, 0);
-}
-
-void trickleDown(ARRAYHEAPIMPL* heapInst, int idx)
+void trickleDown(HEAPPTR heap, int idx)
 {
 	int largerChildIdx;
 
-	HEAPNODE top = heapInst->heapArray[idx];
+	HEAPARRAYNODEPTR currentNode = heap->heapArray[idx];
 
-	while(idx < heapInst->current_size/2) // will run as long as idx is not at the bottom of the row ( has atleast one child)
+	while(idx < heap->currentSize/2) // will run as long as idx is not at the bottom of the row ( has atleast one child)
 	{
 		int leftChildIdx = 2*idx + 1;
 		int rightChildIdx = 2*idx + 2;
 
-		if(heapInst->fnCompareHeapNodeData(heapInst->heapArray[leftChildIdx].data , heapInst->heapArray[rightChildIdx].data) == FALSE)
+		if(heap->fnCompareHeapNodeData(heap->heapArray[leftChildIdx], heap->heapArray[rightChildIdx]))
 			largerChildIdx = rightChildIdx;
 		else
 			largerChildIdx = leftChildIdx;
 
-		if(heapInst->fnCompareHeapNodeData(top.data , heapInst->heapArray[largerChildIdx].data) == TRUE)
+		if(heap->fnCompareHeapNodeData(currentNode ,heap->heapArray[largerChildIdx]))
 			break;
 
-		heapInst->heapArray[idx] = heapInst->heapArray[largerChildIdx];
+		heap->heapArray[idx] = heap->heapArray[largerChildIdx];
 		idx = largerChildIdx;
 	}
 }
 
-
-void displayHeap(ARRAYHEAPIMPL* heapInst)
+BOOL insert_heap(HEAPPTR heap, void* data)
 {
-	int heapIdx					= 0;
-	int maxDepth				= (int)ceil(log((double)heapInst->current_size));
-	int nodeCountAtMaxDepth		= (int)(4*pow(2.0,maxDepth));
-	int prevDepth = 0;
+	HEAPARRAYNODEPTR heapNode = (HEAPARRAYNODEPTR)malloc(heap->mem_size);
+	init_heapnode(heapNode, data, heap->mem_size);
+
+	if(heap->currentSize >= heap->maxSize)
+		return FALSE;
+
+	heap->heapArray[heap->currentSize] = heapNode;
+	trickleUp(heap, heap->currentSize);
+
+	heap->currentSize++;
+	return TRUE;
+}
+
+
+BOOL remove_heap(HEAPPTR heap)
+{
+	HEAPARRAYNODEPTR nodeToDelete = heap->heapArray[0];
+
+	heap->heapArray[0] = heap->heapArray[heap->currentSize];
+	heap->currentSize--;
+	trickleDown(heap, 0);
+
+	return TRUE;
+}
+
+void displayHeap(HEAPPTR heap)
+{
 	QUEUE queue;
 	int currentIdxValue;
 	int currentDepth;
-	int tabCount;
-	int leftChildIdx;	
-	int rightChildIdx;	
+		int tabCount;
+	int leftChildIdx;
+	int rightChildIdx;
+	int heapIdx					= 0;
+	int maxDepth				= (int)ceil(log((double)heap->currentSize));
+	int nodeCountAtMaxDepth		= (int)(4*pow(2.0,maxDepth));
+	int prevDepth = 0;
 	int index;
+
 	init_queue(&queue, sizeof(int));
 
-	enqueue(&queue, &heapIdx);
 
+	insert_queue(&queue, &heapIdx);
 	while(queue.size > 0)
 	{
-		int heapIdx = *((int*)(queue.tail->data));
+		heapIdx = *((int*)queue.tail->data);
 		dequeue(&queue);
+		currentIdxValue = *((int*)(heap->heapArray[heapIdx]->key));
 
-		currentIdxValue = *((int*)((heapInst->heapArray[heapIdx]).data));
-
-		currentDepth = (int) (log((double)(heapIdx+1))/log(2.0));
+		currentDepth = (int) (log((double)heapIdx+1)/log(2.0));
 		if(prevDepth < currentDepth)
 			printf("\n");
 
@@ -120,18 +120,15 @@ void displayHeap(ARRAYHEAPIMPL* heapInst)
 		tabCount = nodeCountAtMaxDepth / (currentDepth+1);
 		for(index = 0; index < tabCount; index++)
 			printf("  ");
+		printf("%d",currentIdxValue);
 
-		printf("%d", currentIdxValue);
+		leftChildIdx = 2*heapIdx + 1;
+		rightChildIdx = 2*heapIdx + 2;
 
-		leftChildIdx	= 2*heapIdx + 1;
-		rightChildIdx	= 2*heapIdx + 2;
-
-		if(leftChildIdx < heapInst->current_size+1)
+		if(leftChildIdx < heap->currentSize)
 			enqueue(&queue, &leftChildIdx);
 
-		if(rightChildIdx < heapInst->current_size+1)
+		if(rightChildIdx < heap->currentSize)
 			enqueue(&queue, &rightChildIdx);
-
 	}
 }
-
