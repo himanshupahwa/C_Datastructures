@@ -9,14 +9,14 @@ void init_bsnode(BSTNODE* bstNode,void* data,int mem_size)
 
 }
 
-void init_bstree(BSTREE* bstree, int mem_size,BOOL (*fnCompareBSTNodeDataPtr)(void *bstNode1, void *bstNode2))
+void init_bstree(BSTREE* bstree, int mem_size, BOOL (*fnCompareBSTNodeDataPtr)(void *bstNode1, void *bstNode2))
 {
 	bstree->root = NULL;
 	bstree->mem_size =  mem_size;
-	bstree->fnCompareBSTNodeData = fnCompareBSTNodeDataPtr; 
+	bstree->fnCompareBSTNodeData = fnCompareBSTNodeDataPtr;
 }
 
-void insert_bst(BSTREE* bsTree, void* data)
+void insert_bst(BSTREEPTR bsTree, void* data)
 {
 	BOOL isLeftChild;
 	BSTNODE *currentNode;
@@ -88,7 +88,7 @@ void postorder_traversal(BSTNODE* root)
 	printf("%d\t", *((int*)(root->data)));
 }
 
-void dfs(BSTNODE* root)
+void dfs(BSTNODEPTR root)
 {
 	if(root == NULL)
 		return;
@@ -106,7 +106,7 @@ void bfs(QUEUE* depthNodes)
 	noOfNodes = depthNodes->size;
 	index = 0;
 	
-	for(index = 0; index < noOfNodes ; index++)
+	while(depthNodes->size > 0)
 	{
 		int deficeit = 0;
 		printf("%d\t",*((int*)((BSTNODE*)(depthNodes->tail->data))->data));
